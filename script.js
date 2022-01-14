@@ -120,18 +120,20 @@ function drawGame () {
 		if (d.distance > 1630) { d.delete(); health--}
 		d.draw()
 	}
+	//draw bullets
+	for (var b of bullets) {
+		b.x += b.speed/5*Math.cos(b.angle * (Math.PI / 180))
+		b.y += b.speed/5*Math.sin(b.angle * (Math.PI / 180))
+		b.collision()
+		if (b.distance > b.range) b.delete();
+		b.draw()
+	}
 	//draw towers
 	if(selected >= 0) {
 		main.draw.alpha(0.5)
 		main.draw.color = "#63666a"
 		main.draw.ellipse(towers[selected].x+25, towers[selected].y+25, towers[selected].radius, towers[selected].radius, true)
 		main.draw.alpha(1)
-	}
-	//draw bullets
-	for (var b of bullets) {
-		b.distance += b.speed/5
-		if (b.distance > b.range) b.delete();
-		b.draw()
 	}
 	for (let i in towers) towers[i].draw();
 	//draw info

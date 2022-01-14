@@ -9,7 +9,7 @@ function Dot (type) {
 	this.pop = function () {
 		this.health--
 		if (!this.health) {this.type--; this.health=this.type}
-		if (!this.type) {} //delete
+		if (!this.type) this.delete()
 		this.speed = this.type;
 		this.color = ["red", "blue", "green", "yellow"][type-1]
 	}
@@ -21,6 +21,7 @@ function Dot (type) {
 		dots.splice(this.index, 1)
 		for (var k of dots) if (k.index > this.index) k.index--
 		if (!dots.length) runWave("dotlane")
+		this.index = -1
 	}
 }
 
@@ -45,7 +46,7 @@ function Tower (type, x, y) {
 	this.angle = 0;
 	this.delay = 300 //change according to type
 	this.target;
-	this.shooter = setInterval(()=>this.targeting, this.delay)
+	this.shooter = setInterval(()=>this.targeting(), this.delay)
 	this.idle = false;
 	
 	this.targeting = function () {
@@ -53,23 +54,31 @@ function Tower (type, x, y) {
 			if(x < tx-r || x > tx+r || y < ty-r || y > ty+r)
 				return 0
 			return 1
-		}	
+		}
 		if(this.index != ctw) {
 			//tower targetting
-			if(!this.target)
-				for(let d of dots) {
+			if(!this.target) {
+				let sortedDots = [...dots]
+				sortedDots.sort((a, b) => a.distance - b.distance)
+				for(let d of sortedDots) {
 					let [x, y] = mapDistToXy(d.distance)
 					if(inRadius(this.x, this.y, this.radius, x, y)) {
 						this.target = d
 						break;
 					}
 				}
-			else {
+			} else {
 				let [x, y] = mapDistToXy(this.target.distance)
-				if(!inRadius(this.x, this.y, this.radius, x, y))
+				if(this.target.index == -1 || !inRadius(this.x, this.y, this.radius, x, y))
 					this.target = undefined
 				else {
 					this.idle = false;
+					let dx, dy
+
+					dx = this.x - x;
+					dy = this.y - y;
+					this.angle = Math.acos(dx / (Math.sqrt(dx*dx + dy*dy))) * (180/Math.PI) + 180
+					this.angle ++ 
 					new Bullet (this.x+25, this.y+25, this.angle, "normal")
 				}
 			}
@@ -92,6 +101,7 @@ function Tower (type, x, y) {
 	}
 	
 	this.delete = function () {
+		clearInterval(this.shooter) //comment out for invisible towers
 		towers.splice(this.index, 1)
 		for (var k of towers) if (k.index > this.index) k.index--
 	}
@@ -101,17 +111,25 @@ function Bullet (x, y, angle, type="normal") {
 	this.index = bullets.length
 	bullets.push(this)
 	this.range = 200;
-	this.speed = 8;
-	this.power = 2;
-	this.distance = 25;
+	this.speed = 35;
+	this.power = 1;
 	this.angle = angle;
+	this.x = x
+	this.y = y
 
 	this.draw = function () {
 		main.draw.color = "#fff"
-		main.draw.ellipse(x+this.distance*Math.cos(angle * (Math.PI / 180)), y+this.distance*Math.sin(angle * (Math.PI / 180)), 2, 2, true)
+		main.draw.ellipse(this.x, this.y, 2, 2, true)
 	}
-	this.checkCollision = function () {
-		//
+	this.collision = function () {
+		for (n of dots) {
+			let [dotx, doty] = mapDistToXy(n.distance)
+			distance = Math.sqrt((Math.pow(dotx-this.x,2))+(Math.pow(doty-this.y,2)))
+			if (distance < 10) {
+				n.pop()
+				if (!--this.power) this.delete
+			}
+		}
 	}
 	this.delete = function () {
 		bullets.splice(this.index, 1)

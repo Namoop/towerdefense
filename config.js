@@ -8,7 +8,7 @@ const bulletTypes = {
 		},
 		normal: {
 			range: 200,
-			speed: 8,
+			speed: 35,
 			power: 2,
 		}
 	}
