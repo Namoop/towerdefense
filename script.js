@@ -1,5 +1,4 @@
-let path, healh, gold, wave, dots = [];
-let towers = [], selected = -1, ctw = -1;
+let path, healh, gold, wave, dots = [], towers = [], bullets = [], selected = -1, ctw = -1;
 
 const main = new Game()
 
@@ -43,11 +42,28 @@ main.run = function () {
 				}
 		}
 
-
-		
-			for(t of towers)
-				t.tick();
+		main.run = function () {
+			for(t of towers) {
+				if(ctw >= 0) {
+					towers[ctw].x = main.mouse.x-25
+					towers[ctw].y = main.mouse.y-25
+					if(!main.mouseDown[0]) {
+						if(towers[ctw].x < 0 || towers[ctw].x > 550 || towers[ctw].y <= 10 || towers[ctw].y > 390)
+							towers[ctw].delete()
+						else {
+							towers[ctw].idle = true
+							 //charge for tower (gold)
+						}
+						ctw = -1
+					}
+				}
+				if (t.idle) {
+					t.angle += t.dir
+					if (Math.random() > 0.999) t.dir = (Math.random() * 0.2 - 0.1) * 3
+				}
+			}
 			drawGame();
+		}
 	}
 }
 
@@ -110,6 +126,12 @@ function drawGame () {
 		main.draw.color = "#63666a"
 		main.draw.ellipse(towers[selected].x+25, towers[selected].y+25, towers[selected].radius, towers[selected].radius, true)
 		main.draw.alpha(1)
+	}
+	//draw bullets
+	for (var b of bullets) {
+		b.distance += b.speed/5
+		if (b.distance > b.range) b.delete();
+		b.draw()
 	}
 	for (let i in towers) towers[i].draw();
 	//draw info

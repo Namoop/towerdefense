@@ -1,10 +1,7 @@
-let towerTypes = ["blue", "cyan", "red", "pink"];
-
 function Dot (type) {
 	this.index = dots.length;
 	dots.push(this);
 	this.distance = 1;
-	this.firing = false;
 	this.health;
 	this.type = type;
 	this.speed = type;
@@ -27,14 +24,11 @@ function Dot (type) {
 	}
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 async function runWave(map) {
 	wave++;
 	for (let i of waves[map][wave-1]) {
 		if (Number(i)) new Dot(Number(i))
-		await sleep(550)
+		await new Promise(resolve => setTimeout(resolve, 550)) //wait (sleep) roughly half a second
 	}
 	
 }
@@ -49,39 +43,38 @@ function Tower (type, x, y) {
 	this.radius = 100;
 	this.dir = 0.2;
 	this.angle = 0;
+	this.delay = 300 //change according to type
 	this.target;
+	this.shooter = setInterval(()=>this.targeting, this.delay)
+	this.idle = false;
 	
-	this.tick = function () {
+	this.targeting = function () {
 		function inRadius(tx, ty, r, x, y) {
-			if(x < tx-r || x > tx + r || y < ty-r || y > ty+r)
+			if(x < tx-r || x > tx+r || y < ty-r || y > ty+r)
 				return 0
 			return 1
 		}	
-		if(t.index != ctw) {
+		if(this.index != ctw) {
 			//tower targetting
-			if(!target)
+			if(!this.target)
 				for(let d of dots) {
 					let [x, y] = mapDistToXy(d.distance)
-					if(inRadius(t.x, t.y, t.radius, x, y)) {
-						target = [x, y]
+					if(inRadius(this.x, this.y, this.radius, x, y)) {
+						this.target = d
 						break;
 					}
 				}
-			if(target) {
-				//this.angle += 			
-			} else {
-				t.angle += t.dir
-				if (Math.random() > 0.999)
-					t.dir = (Math.random() * 0.2 - 0.1) * 3
+			else {
+				let [x, y] = mapDistToXy(this.target.distance)
+				if(!inRadius(this.x, this.y, this.radius, x, y))
+					this.target = undefined
+				else {
+					this.idle = false;
+					new Bullet (this.x+25, this.y+25, this.angle, "normal")
+				}
 			}
-		}
-		if(ctw >= 0) {
-			towers[ctw].x = main.mouse.x-25
-			towers[ctw].y = main.mouse.y-25
-			if(!main.mouseDown[0]) {
-				if(towers[ctw].x < 0 || towers[ctw].x > 550 || towers[ctw].y <= 10 || towers[ctw].y > 390)
-					towers[ctw].delete()
-				ctw = -1
+			if (!this.target) {
+				setTimeout(()=>this.idle = true,1000)
 			}
 		}
 	}
@@ -104,35 +97,25 @@ function Tower (type, x, y) {
 	}
 }
 
-function Bullet (x, y, type) {
-	let bulletTypes = {
-		fast: {
-			range: 3,
-			speed: 2,
-			power: 1,
-		}
-	}
-	
-	this.range = 100;
-	this.speed = 3;
+function Bullet (x, y, angle, type="normal") {
+	this.index = bullets.length
+	bullets.push(this)
+	this.range = 200;
+	this.speed = 8;
 	this.power = 2;
+	this.distance = 25;
+	this.angle = angle;
 
 	this.draw = function () {
+		main.draw.color = "#fff"
+		main.draw.ellipse(x+this.distance*Math.cos(angle * (Math.PI / 180)), y+this.distance*Math.sin(angle * (Math.PI / 180)), 2, 2, true)
+	}
+	this.checkCollision = function () {
 		//
 	}
 	this.delete = function () {
-		//
+		bullets.splice(this.index, 1)
+		for (var k of bullets) if (k.index > this.index) k.index--
 	}
 	
-}
-
-//[ [amount, type], waittime, [amount, type]]
-//001111110002200055300600333
-const waves = {
-	dotlane: [
-		"1111111111",
-		"1111100222",
-		"1111110002222222",
-		"11110000111000333002222"
-	]
 }
