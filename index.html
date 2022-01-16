@@ -3,13 +3,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <title>replit</title>
+    <title>Tower Defense</title>
     <link href="style.css" rel="stylesheet" type="text/css" />
   </head>
   <body id="body">
+	<div id="gamespace0">
+		<select id="scale"">
+			<option value="width">scale to width</option>
+			<option value="default">800x400</option>
+			<option value="height">scale to height</option>
+			<option value="stretch">stretch to screen</option>
+		</select>
+		<button onclick="init(document.getElementById('scale').value)">play</button>
+	</div>
 	<script src="config.js"></script>
-	<script src="tlib.js"></script>
+	<script src="lib.js"></script>
 	<script src="classes.js"></script>
-    <script src="script.js"></script>
+    	<script src="main.js"></script>
   </body>
 </html>
