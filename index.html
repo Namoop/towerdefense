@@ -13,12 +13,15 @@
 			<option value="default">800x400</option>
 			<option value="height">scale to height</option>
 			<option value="stretch">stretch to screen</option>
+			<option value="fullscreen">fullscreen</option>
+			<option value="x10">x10</option>
 		</select>
-		<button onclick="init(document.getElementById('scale').value)">play</button>
+		<button onclick="let sc = document.getElementById('scale').value; main.setup(sc == 'x10' ? 1000 : 100, sc == 'x10' ? '':sc); init();">play</button>
 	</div>
-	<script src="config.js"></script>
+	<div id="debug"></div>
 	<script src="lib.js"></script>
 	<script src="classes.js"></script>
-    	<script src="main.js"></script>
+	<script src="config.js"></script>
+    <script src="main.js"></script>
   </body>
 </html>

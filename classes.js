@@ -1,102 +1,133 @@
-function Dot (type) {
-	this.index = dots.length;
-	dots.push(this);
-	this.type = type;
-	this.distance = 1;
-	
-	this.update = function() {
+let health, gold, wave, selected, ctw, wavetick, wavecurr, map, command = false;
+const main = new Game(), dots = [], towers = [], bullets = [], active = {}, debug = [], tails = [], buttons = [], shapes = [];
+const nextWave = () => {wave++; wavecurr = 0;}
+
+class Button {
+	constructor({x, y, width, height, color="grey", text="", textColor="white", textSize=20, callback=function(){}, param=[]}) {
+		this.x = x;
+		this.y = y;
+		this.w = width;
+		this.h = height;
+		this.color = color;
+		this.text = text;
+		this.textcolor = textColor;
+		this.textsize = textSize;
+		this.param = param;
+		this.callback = callback;
+		buttons.push(this);
+		main.onclicks.push([()=> {
+			if(main.mouseIn(this.x, this.y, this.x+this.w, this.y+this.h))
+				this.callback(...this.param);
+		}, 0])
+	}
+	draw() {
+		main.draw.color = this.color;
+		main.draw.rect(this.x, this.y, this.w, this.h, true);
+		if(this.text != null) {
+			main.draw.color = this.textcolor;
+			main.draw.text(this.x, this.y, this.textsize, this.text);
+		}
+	}
+	delete() {buttons.splice(buttons.indexOf(this),1)}
+}
+
+class Dot {
+	constructor(type, pathindex, distance) {
+		this.index = dots.length;
+		this.type = type;
+		this.distance = distance ?? 1;
 		this.health = dotTypes[this.type].health;
 		this.speed = dotTypes[this.type].speed;
 		this.color = dotTypes[this.type].color;
+		this.onDeath = dotTypes[this.type].onDeath;
+		this.immune = dotTypes[this.type].immune;
+		this.value = dotTypes[this.type].value;
+		this.pathindex = pathindex;
+		dots.push(this);
 	}
-	this.update();
-	
-	this.pop = function () {
-		gold += 5;
-		this.health--;
-		if(!this.health) {
-			this.type = dotTypes[this.type].link;
-			if(!this.type)
-				this.delete();
-			else
-				this.update();
+	pop(damage) {
+		this.health -= damage;
+		if(this.health <= 0) {
+			gold += this.value;
+			if (this.onDeath[0]) for (let n in this.onDeath) new Dot(this.onDeath[n], this.pathindex, this.distance-10*n)
+			this.delete();
 		}
 	}
-	this.draw = function () {
+	draw() {
 		main.draw.color = this.color;
-		main.draw.ellipse(...mapDistToXy(this.distance), 10, 10, true);
+		main.draw.ellipse(...mapDistToXy(this.distance, this.pathindex), 10, 10, true);
 	}
-	this.delete = function () {
+	delete() {
 		dots.splice(this.index, 1);
-		for(var k of dots)
-			if(k.index > this.index)
-				k.index--;
-		if(wavecurr > waves[map].length)
-			nextWave();
+		for(var k of dots) if(k.index > this.index) k.index--;
+		if (dots.length == 0) if(getCurr({
+			map:map,index:wavecurr,
+			wave:wave > waves[map].length ?waves[map].length-1 : wave-1
+		}).every(a=>isNaN(a))) nextWave();
 		this.index = -1;
 	}
 }
 
-let nextWave = () => {wave++; wavecurr = 0;}
-
-function spawnDot() {
-	let i;
-
-	if (wave < 1) return;
-	if(wave > waves[map].length)
-		i = waves[map][waves[map].length-1][wavecurr++];
-	else
-		i = waves[map][wave-1][wavecurr++];
-	if(Number(i))
-		new Dot(Number(i));
-}
-
-function Tower (type, x, y) {
-	this.index = towers.length;
-	towers.push(this);
-	this.type = type;
-
-	this.x = x;
-	this.y = y;
-	this.color = towerTypes[type].color;
-	this.radius = towerTypes[type].radius;
-	this.currdelay = towerTypes[type].delay;
-	this.bullet = towerTypes[type].bullet;
-	this.burst = towerTypes[type].burst;
-	this.burstd = towerTypes[type].burstd;
-	this.nshot = towerTypes[type].nshot;
-	this.constant = towerTypes[type].constant;
-	this.dir = 0.2;
-	this.angle = 0;
-	this.idle = false;
-
-	this.shoot = function (d, dotx, doty, target) {
-		if(target)
-			this.angle = Math.atan2(this.y+THALF-doty, this.x+THALF-dotx) + Math.PI;
+class Tower {
+	constructor(type, x, y) {
+		this.inner = towerTypes[type].inner;
+		this.index = towers.length;
+		this.type = type;
+		this.x = x;
+		this.y = y;
+		this.color = towerTypes[type].color;
+		this.radius = towerTypes[type].radius;
+		this.delay = towerTypes[type].delay;
+		this.bullet = towerTypes[type].bullet;
+		this.burst = towerTypes[type].burst;
+		this.burstd = towerTypes[type].burstd;
+		this.nshot = towerTypes[type].nshot;
+		this.constant = towerTypes[type].constant;
+		this.price = towerTypes[type].price;
+		this.burstc = this.burst;
+		this.currdelay = this.delay;
+		this.popcount = 0;
+		this.popsec = Array(10).fill(0);
+		this.dir = 0.2;
+		this.angle = 0;
+		this.idle = false;
+		this.ticks = 0;
+		this.up = [0, 0];
+		towers.push(this);
+		if (type == "drone") this.sub = "normal"
+	}
+	shoot(d, dotx, doty, target) {
+		if(target) this.angle = Math.atan2(this.y+THALF-doty, this.x+THALF-dotx) + Math.PI;
 
 		switch(this.type) {
 		case "drones":
 			for(let i = 0; i < this.nshot; i++)
-				new Bullet(this.x+THALF, this.y+THALF, Math.PI*2 * (i/this.nshot), this.bullet);
+				new Bullet(this.x+THALF, this.y+THALF, Math.PI*2 * (i/this.nshot), this, this.bullet);
 			break;
 		case "wizard":
-			for(let i = 0; i < this.nshot; i++)
-				new Bullet(this.x+THALF, this.y+THALF, this.angle, this.bullet);
-			bullets[bullets.length-1].target = d;
+			for(let i = 0; i < this.nshot; i++) {
+				new Bullet(this.x+THALF, this.y+THALF, this.angle, this, this.bullet);
+				if(i == 0)
+					bullets[bullets.length-1].target = d;
+				else {
+					if(dots.length > 0)
+						bullets[bullets.length-1].target = dots[Math.floor(Math.random() * dots.length)];
+				}
+			}
 			break;
 		default:
 			for(let i = 0; i < this.nshot; i++)
-				new Bullet(this.x+THALF, this.y+THALF, this.angle, this.bullet);
+				new Bullet(this.x+THALF, this.y+THALF, this.angle, this, this.bullet);
 		}
-		this.burst--;
-		if(this.burst > 0)
+		this.burstc--;
+		if(this.burstc > 0)
 			this.currdelay = 5;
-		if(this.burst == -this.burstd)
-			this.burst = towerTypes[type].burst;
+		if(this.burstc == -this.burstd)
+			this.burstc = this.burst;
 	}
-	this.targeting = function () {
-		this.currdelay = towerTypes[this.type].delay;
-		let inRadius = (tx, ty, dx, dy, r) => (tx-dx)*(tx-dx) + (ty-dy)*(ty-dy) <= r*r
+	targeting() {
+		this.currdelay = this.delay;
+		let inRadius = (tx, ty, dx, dy, r) => Math.hypot(tx-dx,ty-dy) <= r
 		
 		if(this.index != ctw) {
 			if(this.constant) {
@@ -108,9 +139,10 @@ function Tower (type, x, y) {
 			sortedDots.sort((a, b) => b.distance - a.distance);
 			this.idle = true;
 			for(let d of sortedDots) {
-				let [dotx, doty] = mapDistToXy(d.distance);
+				let [dotx, doty] = mapDistToXy(d.distance, d.pathindex);
 
-				if(inRadius(this.x+THALF, this.y+THALF, dotx, doty, this.radius)) {
+				if(inRadius(this.x+THALF, this.y+THALF, dotx, doty, this.radius)
+				  && (this.inner ? (!inRadius(this.x+THALF,this.y+THALF,dotx,doty,this.inner)) : true)) {
 					this.shoot(d, dotx, doty, true);
 					this.idle = false;
 					break;
@@ -120,7 +152,24 @@ function Tower (type, x, y) {
 				this.currdelay = 1;
 		}
 	}
-	this.draw = function () {
+	upgrade(t) {
+		let u = upgrades[this.type][t];
+
+		if(this.up[t] || gold-u[0] < 0)
+			return;
+		this.up[t] = 1;
+		gold -= u[0];
+		this.price += u[0];
+		for(let i in u[1])
+			switch(u[1][i][0]) {
+			case "nshot":	this.nshot = u[1][i][1]; break;
+			case "burst":	this.burst = u[1][i][1]; break;
+			case "radius":	this.radius = u[1][i][1]; break;
+			case "bullet":	this.bullet = u[1][i][1]; break;
+			case "delay":	this.delay = u[1][i][1]; break;
+			}
+	}
+	draw() {
 		let nw, nh;
 
 		main.pen.save();
@@ -142,100 +191,140 @@ function Tower (type, x, y) {
 		case "drones":
 			main.draw.rect(this.x + (TSIZE*0.5/2), this.y + (TSIZE*0.5/2), TSIZE*0.5, TSIZE*0.5, true);
 			break;
-		/*
-		case "cannon":
-			nw = TSIZE*(3.5/5);
-			nh = TSIZE*(2/5);
-			main.draw.rect(this.x + THALF*1, this.y+THALF-(nh/2), nw, nh, true);
-			break;*/
 		}
-		
 		main.pen.restore();
 	}
-	this.delete = function () {
-		//clearInterval(this.shooter) //comment out for invisible towers
+	delete() {
 		towers.splice(this.index, 1);
-		for(var k of towers) 
-			if(k.index > this.index)
-				k.index--;
+		for(var k of towers) if(k.index > this.index) k.index--;
 	}
 }
 
-function Bullet (x, y, angle, type="normal") {
-	this.index = bullets.length;
-	bullets.push(this);
-	this.type = type;
-
-	this.x = x;
-	this.y = y;
-	this.distance = 1;
-	this.range = bulletTypes[type].range;
-	this.speed = bulletTypes[type].speed;
-	this.power = bulletTypes[type].power;
-	this.size = bulletTypes[type].size;
-	this.cooldown = bulletTypes[type].cooldown;
-	this.angle = angle + (Math.random()*bulletTypes[type].spread - 0.5*bulletTypes[type].spread);
-	this.alpha = 1;
-
-	this.draw = function () {
-		main.draw.color = "#fff";
-		main.draw.alpha(this.alpha);
-		if(this.type == "drone")
+class Bullet {
+	constructor(x, y, angle, link, type="normal") {
+		this.index = bullets.length;
+		this.type = type;
+		this.x = x;
+		this.y = y;
+		this.distance = 1;
+		this.link = link;
+		this.pierced = [];
+		this.attributes = bulletTypes[type].attributes;
+		this.color = bulletTypes[type].color
+		this.bclass = bulletTypes[type].bclass;
+		this.range = bulletTypes[type].range;
+		this.speed = bulletTypes[type].speed;
+		this.power = bulletTypes[type].power;
+		this.size = bulletTypes[type].size;
+		this.cooldown = bulletTypes[type].cooldown;
+		this.angle = angle + (Math.random()*bulletTypes[type].spread - 0.5*bulletTypes[type].spread);
+		this.alpha = 1;
+		if (type = "drone") this.sub = link.sub;
+		bullets.push(this);
+	}
+	draw() {
+		main.draw.color = this.color;
+		main.draw.text(this.x,this.y,this.size,Math.round(this.alpha*100)/100)
+		main.draw.alpha(this.alpha<0 ? 0.1 : this.alpha);
+		if(this.bclass == "drone") {
+			main.pen.save()
+			main.draw.color = "black"
+			main.draw.rect(this.x-this.size/2-1, this.y+this.size/2-1, this.size+2, this.size+2, true);
+			main.pen.restore()
 			main.draw.rect(this.x-this.size/2, this.y+this.size/2, this.size, this.size, true);
+		}
 		else
 			main.draw.ellipse(this.x, this.y, this.size, this.size, true);
 		main.draw.alpha(1);
 	}
-	this.tick = function () {
-		if(this.type == "drone" && --this.cooldown <= 0) {
+	tick() {
+		//drone targeting
+		if(this.bclass == "drone" && --this.cooldown <= 0) {
 			for(let i = 0; i < 4; i++) {
-				new Bullet(this.x, this.y, Math.PI/2 * i, "fast");
+				new Bullet(this.x, this.y, Math.PI/2 * i, this.link, this.sub);
 				if(dots.length > 0)
-					bullets[bullets.length-1].target = dots[Math.floor(Math.random() * dots.length)];
+					bullets.at(-1).target = dots[Math.floor(Math.random() * dots.length)];
 			}
-			this.cooldown = bulletTypes[type].cooldown;
+			this.cooldown = bulletTypes[this.type].cooldown;
 		}
-		if(this.type == "magic")
+		//wizard targeting
+		if(this.bclass == "magic")
 			tails.push([this, this.x, this.y, this.size]);
 		if(this.target) {
 			if(this.target.index == -1)
 				this.target = dots[0];
 			if(this.target) {
-				[dotx, doty] = mapDistToXy(this.target.distance);
+				let [dotx, doty] = mapDistToXy(this.target.distance, this.target.pathindex);
 				//magicky future upgrade, swarm of them
 				/*
 				let v = Math.atan2(this.y-doty, this.x-dotx) + Math.PI
 				this.angle += Math.min(Math.abs(this.angle-v), 2*Math.PI) * (this.angle-1 < 0 ? 1 : -1)*/
 				let prev = this.angle;
 				this.angle = Math.atan2(this.y-doty, this.x-dotx) + Math.PI;
-				if(this.angle-prev > 0.1)
-					this.angle = prev + 0.1;
-				else if(this.angle-prev < -0.1)
-					this.angle = prev - 0.1;
+				if(this.angle-prev > 0.07)
+					this.angle = prev + 0.07;
+				else if(this.angle-prev < -0.07)
+					this.angle = prev - 0.07;
 			}
 		}
+		//movement
 		this.x += this.speed/5 * Math.cos(this.angle);
 		this.y += this.speed/5 * Math.sin(this.angle);
 		this.distance += this.speed/5;
 		//collision
-		for(n of dots) {
-			let [dotx, doty] = mapDistToXy(n.distance);
-			distance = Math.sqrt((Math.pow(dotx-this.x,2))+(Math.pow(doty-this.y,2)));
+		for(let n of dots) {
+			if (this.pierced.includes(n)) continue;
+			let skip = false;
+			for (let i of (this.attributes?this.attributes:[])) if (n.immune.includes(i)) {skip = true; break;}
+			if (skip) continue;
+			let [dotx, doty] = mapDistToXy(n.distance, n.pathindex);
+			let distance = Math.sqrt((Math.pow(dotx-this.x,2))+(Math.pow(doty-this.y,2)));
 			if(distance < 10) {
-				n.pop();
-				if (!--this.power)
-					this.delete();
+				let rpops = this.power;
+				if(n.health < this.power)
+					rpops = n.health;
+				this.link.popsec[0] += rpops;
+				this.link.popcount += rpops;
+
+				this.pierced.push(n)
+				let dothealth = n.health
+				n.pop(this.power);
+				if (this.attributes.includes("impact")) {if ((this.power -= dothealth) <= 0) 	this.delete();}
+				else if (!--this.piercing) this.delete();
+				
 			}
 		}
+		//other
 		if(this.distance > this.range-this.speed*10)
 			this.alpha -= 0.01;
 		if(this.alpha < 0.05)
 			this.delete();
 	}
-	this.delete = function () {
+	delete() {
 		bullets.splice(this.index, 1);
-		for(var k of bullets)
-			if(k.index > this.index)
-				k.index--;
+		for(var k of bullets) if(k.index > this.index) k.index--;
+		this.index = -1
 	}
+}
+
+class Shape {
+	constructor({x,y,param=[],color="black",size=1,alpha=1,shape="rect"}) {
+		this.x = x;
+		this.y = y;
+		this.color = color;
+		this.size = size;
+		this.alpha = alpha;
+		this.param = param;
+		this.shape = shape;
+		shapes.push(this)
+	}	
+	draw() {
+		main.pen.save();
+		main.draw.color = this.color;
+		main.draw.size = this.size;
+		main.draw.alpha(this.alpha);
+		main.draw[this.shape](this.x,this.y,...this.param)
+		main.pen.restore();
+	}
+	delete() {shapes.splice(shapes.indexOf(this),1)}
 }
