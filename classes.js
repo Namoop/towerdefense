@@ -1,6 +1,8 @@
 let health, gold, wave, selected, ctw, wavetick, wavecurr, map, command = false;
 const main = new Game(), dots = [], towers = [], bullets = [], active = {}, debug = [], tails = [], buttons = [], shapes = [];
 const nextWave = () => {wave++; wavecurr = 0;}
+const inRect = (px, py, rx, ry, w, h) => ((px >= rx && px <= rx+w) && (py >= ry && py <= ry+h))
+//var rollcall = {}, bulletIndex = 0;
 
 class Button {
 	constructor({x, y, width, height, color="grey", text="", textColor="white", textSize=20, callback=function(){}, param=[]}) {
@@ -32,16 +34,9 @@ class Button {
 }
 
 class Dot {
-	constructor(type, pathindex, distance) {
+	constructor(pathindex, distance) {
 		this.index = dots.length;
-		this.type = type;
 		this.distance = distance ?? 1;
-		this.health = dotTypes[this.type].health;
-		this.speed = dotTypes[this.type].speed;
-		this.color = dotTypes[this.type].color;
-		this.onDeath = dotTypes[this.type].onDeath;
-		this.immune = dotTypes[this.type].immune;
-		this.value = dotTypes[this.type].value;
 		this.pathindex = pathindex;
 		dots.push(this);
 	}
@@ -49,7 +44,10 @@ class Dot {
 		this.health -= damage;
 		if(this.health <= 0) {
 			gold += this.value;
-			if (this.onDeath[0]) for (let n in this.onDeath) new Dot(this.onDeath[n], this.pathindex, this.distance-10*n)
+			if (this.onDeath)
+				for (let n in this.onDeath)
+					newDot(this.onDeath[n], this.pathindex, this.distance-10*n);
+			
 			this.delete();
 		}
 	}
@@ -107,11 +105,9 @@ class Tower {
 		case "wizard":
 			for(let i = 0; i < this.nshot; i++) {
 				new Bullet(this.x+THALF, this.y+THALF, this.angle, this, this.bullet);
-				if(i == 0)
-					bullets[bullets.length-1].target = d;
+				if(i == 0) bullets.at(-1).target = d;
 				else {
-					if(dots.length > 0)
-						bullets[bullets.length-1].target = dots[Math.floor(Math.random() * dots.length)];
+					if(dots.length > 0) bullets.at(-1).target = dots[Math.floor(Math.random() * dots.length)];
 				}
 			}
 			break;
@@ -202,7 +198,7 @@ class Tower {
 
 class Bullet {
 	constructor(x, y, angle, link, type="normal") {
-		this.index = bullets.length;
+		//this.index = bullets.length;
 		this.type = type;
 		this.x = x;
 		this.y = y;
@@ -217,15 +213,18 @@ class Bullet {
 		this.power = bulletTypes[type].power;
 		this.size = bulletTypes[type].size;
 		this.cooldown = bulletTypes[type].cooldown;
+		this.cooldownCounter = bulletTypes[type].cooldown;
 		this.angle = angle + (Math.random()*bulletTypes[type].spread - 0.5*bulletTypes[type].spread);
 		this.alpha = 1;
-		if (type = "drone") this.sub = link.sub;
+		if (this.type == "drone") this.sub = link.sub;
 		bullets.push(this);
+		//if (this.type == "drone") this.rollcallIndex = bulletIndex++
+		//if (this.type == "drone") rollcall[this.rollcallIndex] = this;
 	}
 	draw() {
 		main.draw.color = this.color;
-		main.draw.text(this.x,this.y,this.size,Math.round(this.alpha*100)/100)
-		main.draw.alpha(this.alpha<0 ? 0.1 : this.alpha);
+		//if (this.type == "drone") main.draw.text(this.x,this.y,10,Math.round(this.alpha*100)/100)
+		main.draw.alpha(this.alpha<0 ? 0.01 : this.alpha);
 		if(this.bclass == "drone") {
 			main.pen.save()
 			main.draw.color = "black"
@@ -238,21 +237,37 @@ class Bullet {
 		main.draw.alpha(1);
 	}
 	tick() {
+		//movement
+		this.x += this.speed/5 * Math.cos(this.angle);
+		this.y += this.speed/5 * Math.sin(this.angle);
+		this.distance += this.speed/5;
+		if(this.distance > this.range-this.speed*10) { //not accurate
+			//this.alpha = (this.range-this.speed*100) //...or something
+			if(this.alpha >= 0.01)
+				this.alpha -= 0.01;
+		}
+		if (this.distance > this.range) this.delete("range")
+		else if(this.alpha < 0.01) this.delete("alpha");
+		else if (!inRect(this.x, this.y, 0, 10, 600, 390)) this.delete("out of bounds")
+
+		
 		//drone targeting
-		if(this.bclass == "drone" && --this.cooldown <= 0) {
+		if(this.bclass == "drone" && --this.cooldownCounter <= 0) {
 			for(let i = 0; i < 4; i++) {
 				new Bullet(this.x, this.y, Math.PI/2 * i, this.link, this.sub);
 				if(dots.length > 0)
 					bullets.at(-1).target = dots[Math.floor(Math.random() * dots.length)];
 			}
-			this.cooldown = bulletTypes[this.type].cooldown;
+			this.cooldownCounter = this.cooldown;
 		}
 		//wizard targeting
 		if(this.bclass == "magic")
 			tails.push([this, this.x, this.y, this.size]);
 		if(this.target) {
-			if(this.target.index == -1)
-				this.target = dots[0];
+			if(this.target.index == -1) {
+				if(dots.length) this.target = dots[0];
+				else this.target = undefined;
+			}
 			if(this.target) {
 				let [dotx, doty] = mapDistToXy(this.target.distance, this.target.pathindex);
 				//magicky future upgrade, swarm of them
@@ -267,10 +282,6 @@ class Bullet {
 					this.angle = prev - 0.07;
 			}
 		}
-		//movement
-		this.x += this.speed/5 * Math.cos(this.angle);
-		this.y += this.speed/5 * Math.sin(this.angle);
-		this.distance += this.speed/5;
 		//collision
 		for(let n of dots) {
 			if (this.pierced.includes(n)) continue;
@@ -289,21 +300,33 @@ class Bullet {
 				this.pierced.push(n)
 				let dothealth = n.health
 				n.pop(this.power);
-				if (this.attributes.includes("impact")) {if ((this.power -= dothealth) <= 0) 	this.delete();}
-				else if (!--this.piercing) this.delete();
+				if (this.attributes.includes("impact")) {if ((this.power -= dothealth) <= 0) this.delete("impact");}
+				else if (!--this.piercing) this.delete("pierce");
 				
 			}
 		}
-		//other
-		if(this.distance > this.range-this.speed*10)
-			this.alpha -= 0.01;
-		if(this.alpha < 0.05)
-			this.delete();
+		
 	}
-	delete() {
-		bullets.splice(this.index, 1);
-		for(var k of bullets) if(k.index > this.index) k.index--;
-		this.index = -1
+	delete(death) {
+		this.death = death;
+		bullets.splice(bullets.indexOf(this), 1);/*
+		if (this.type == "drone") delete rollcall[this.rollcallIndex];
+		//for(var k of bullets) if(k.index > this.index) k.index--;
+		if (this.type == "drone") switch (death) {
+			case ("alpha"): //notice how the dissapearing dots don't leave this behind -- they aren't getting deleted, they are maybe being removed from the bullets array in some other way?
+				//debug.push(new Shape({x: this.x, y:this.y, color:"white", shape:"text", param:[10, Math.round(this.alpha*1000)/1000],}))
+				break;
+			case ("impact"):
+				console.log("wtf");
+				throw new Error("why tf is it impact dying --stacktrace")
+				break;
+			case ("pierce"): //seems to be working
+				//console.log("hit a dot")
+				break;
+			default:
+				throw new Error("holy shit this thing is broken --stacktrace")
+		}*/
+		//this.index = -1
 	}
 }
 

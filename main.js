@@ -170,11 +170,11 @@ function runGame () {
 			towers[ctw].x = main.mouse.x-THALF;
 			towers[ctw].y = main.mouse.y-THALF;
 
-			let inRect = (px, py, rx, ry, w, h) => {
+			//let inRect = (px, py, rx, ry, w, h) => {
 				//debug.push(["rect", [rx, ry, w, h, true], "#1a077f", 1, 0.5])
-				return ((px >= rx && px <= rx+w) && (py <= ry && py >= ry-h))
-			}
-			debug.length = 0;
+			//	return ((px >= rx && px <= rx+w) && (py <= ry && py >= ry-h))
+			//}
+			//debug.length = 0;
 			/*
 			for (let i = 0; i < maps[map].path.length-1; i++) {
 				debug.push(new Shape({
@@ -237,6 +237,14 @@ function runGame () {
 	}
 	
 	drawGame();
+
+/*
+	for (let j in rollcall) {
+		if (!bullets.indexOf(rollcall[j])) {
+			console.log(rollcall[j])
+			//throw new Error ("--dissapearo found")
+		}
+	}*/
 }
 
 function getPathMax(len,pI) {
@@ -378,7 +386,7 @@ function drawGame () {
 
 	for(let d of maps[map].decor) d.draw();
 	for(let s of debug) s.draw();
-	debug.length = 0 //temp
+	//debug.length = 0 //temp
 
 
 
@@ -404,7 +412,7 @@ function spawnDot() {
 		wave: wave > waves[map].length ?
 			waves[map].length-1 : wave-1,
 	})
-	for (let n in i) if(i[n]) new Dot(i[n], n);
+	for (let n in i) if(i[n]) newDot(i[n], n);
 }
 
 function getCurr({map, wave, index, path}) {

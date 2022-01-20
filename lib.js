@@ -130,6 +130,10 @@ function Game() {
 			else me.pen.stroke();
 		},
 		circle(x, y, r, fill, stroke, strokeWidth) {
+			me.draw.size = strokeWidth
+			if (fill) me.draw.ellipse(x,y,r,r,true)
+			if (stroke ) me.draw.ellipse(x,y,r,r,false)
+			/*
   			me.pen.beginPath()
   			me.pen.arc(x, y, r, 0, 2*Math.PI, false)
   			if(fill) {
@@ -140,7 +144,7 @@ function Game() {
     				me.pen.lineWidth = strokeWidth
    	 			me.pen.strokeStyle = stroke
    		 		me.pen.stroke()
-  			}
+  			}*/
 		},
 	}
 }

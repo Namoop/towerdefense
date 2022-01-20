@@ -50,7 +50,7 @@ const towerTypes = {
 		burst:	0,
 		burstd:	0,
 		nshot:	1,
-		price:	450,
+		price:	1000,
 		constant: false,
 	},
 	wizard: {
@@ -88,57 +88,81 @@ const towerTypes = {
 	},
 };
 
-const dotTypes = [ , {
-		color:	"red",	
-		speed:	1,
-		health:	1,
-		onDeath: [0],
-		immune: [],
-		value: 1,
-	}, {
-		color:	"blue",
-		speed:	1.4,
-		health:	2,
-		onDeath: [1],
-		immune: [],
-		value: 8,
-	}, {
-		color:	"green",
-		speed:	1.8,
-		health:	3,
-		onDeath: [2],
-		immune: [],
-		value: 15,
-	}, {
-		color:	"yellow",
-		speed:	3.2,
-		health: 4,
-		onDeath: [3],
-		immune: [],
-		value: 27,
-	}, {
-		color:	"pink",
-		speed:	3.5,
-		health: 5,
-		onDeath: [4],
-		immune: [],
-		value: 40,
-	}, {
-		color:	"black",
-		speed:	3.5,
-		health: 11,
-		onDeath: [5, 5],
-		immune: ["explosion"],
-		value: 60,
-	}, {
-		color:	"white",
-		speed:	3.5,
-		health: 11,
-		onDeath: [5, 5],
-		immune: ["freeze"],
-		value: 60,
-	},
-];
+
+class Red extends Dot {
+	constructor (path, distance) {
+		super(path,distance)
+		this.health = 1;
+		this.value = 3;
+		this.immune = [];
+		this.onDeath = undefined;
+		this.speed = 1;
+		this.color = "red"
+	}
+}
+class Blue extends Dot {
+	constructor (path, distance) {
+		super(path,distance)
+		this.health = 2;
+		this.value = 8;
+		this.immune = [];
+		this.onDeath = [1];
+		this.speed = 1.4;
+		this.color = "blue";
+	}
+}
+class Green extends Dot {constructor (path, distance) {
+	super(path,distance)
+	this.health = 3;
+	this.value = 15;
+	this.immune = [];
+	this.onDeath = [2];
+	this.speed = 1.8;
+	this.color = "green";
+}}
+class Yellow extends Dot {
+	constructor (path, distance) {
+	super(path,distance)
+	this.health = 4;
+	this.value = 27;
+	this.immune = [];
+	this.onDeath = [3];
+	this.speed = 3.2;
+	this.color = "yellow";
+}}
+class Pink extends Dot {
+	constructor (path, distance) {
+		super(path,distance)
+		this.health = 5;
+		this.value = 40;
+		this.immune = [];
+		this.onDeath = [4];
+		this.speed = 3.5;
+		this.color = "pink";
+	}
+}
+class Black extends Dot {
+	constructor (path, distance) {
+		super(path,distance)
+		this.health = 11;
+		this.value = 70;
+		this.immune = ["explosion"];
+		this.onDeath = [5, 5];
+		this.speed = 3.5;
+		this.color = "black";
+	}
+}
+class White extends Dot {
+	constructor (path, distance) {
+		super(path,distance)
+		this.health = 11;
+		this.value = 70;
+		this.immune = ["freeze"];
+		this.onDeath = [5, 5];
+		this.speed = 3.5;
+		this.color = "white";
+	}
+}
 
 const bulletTypes = {
 	fast: {
@@ -156,7 +180,7 @@ const bulletTypes = {
 	normal: {
 		color: "white",
 		bclass:	"normal",
-		range:	150,
+		range:	350,
 		speed:	20,
 		power:	0.5,
 		piercing: 1,
@@ -184,7 +208,7 @@ const bulletTypes = {
 		speed:	90,
 		power:	10,
 		size:	7,
-		spread:	0.5,
+		spread:	0,
 		cooldown: 0,
 		attributes: ["impact"],
 	},
@@ -195,7 +219,7 @@ const bulletTypes = {
 		speed:	90,
 		power:	15,
 		size:	7,
-		spread:	0.5,
+		spread:	0,
 		cooldown: 0,
 		attributes: ["impact"],
 	},
@@ -213,7 +237,7 @@ const bulletTypes = {
 	drone: {
 		color: "white",
 		bclass:	"drone",
-		range:	100,
+		range:	200,
 		speed:	2,
 		power:	5,
 		piercing: 1,
@@ -223,6 +247,8 @@ const bulletTypes = {
 		attributes: [],
 	},
 };
+
+const newDot = (type, path, distance) => new [,Red, Blue, Green, Yellow, Pink, Black, White][type](path, distance)
 
 const maps = {
 	dotlane: {
