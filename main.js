@@ -300,7 +300,7 @@ function drawGame () {
 	}
 	//draw the dots
 	for(var d of dots) {
-		d.distance += d.speed / 1.5;
+		d.distance += d.constructor.speed / 1.5;
 		if(d.distance > getPathMax(maps[map]["path"+d.pathindex].length-1,d.pathindex)-15) {
 			d.delete();
 			if(--health <= 0)

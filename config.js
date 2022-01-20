@@ -90,83 +90,74 @@ const towerTypes = {
 
 
 class Red extends Dot {
-	constructor (path, distance) {
-		super(path,distance)
-		this.health = 1;
-		this.value = 3;
-		this.immune = [];
-		this.onDeath = undefined;
-		this.speed = 1;
-		this.color = "red"
-	}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 1)}
+	static value = 3;
+	static immune = [];
+	static onDeath = undefined;
+	static speed = 1;
+	static color = "red";
 }
 class Blue extends Dot {
-	constructor (path, distance) {
-		super(path,distance)
-		this.health = 2;
-		this.value = 8;
-		this.immune = [];
-		this.onDeath = [1];
-		this.speed = 1.4;
-		this.color = "blue";
-	}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 2)}
+	static value = 8;
+	static immune = [];
+	static onDeath = [1];
+	static speed = 1.4;
+	static color = "blue";
 }
-class Green extends Dot {constructor (path, distance) {
-	super(path,distance)
-	this.health = 3;
-	this.value = 15;
-	this.immune = [];
-	this.onDeath = [2];
-	this.speed = 1.8;
-	this.color = "green";
-}}
+class Green extends Dot {
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 3)}
+	static value = 15;
+	static immune = [];
+	static onDeath = [2];
+	static speed = 1.8;
+	static color = "green";
+}
 class Yellow extends Dot {
-	constructor (path, distance) {
-	super(path,distance)
-	this.health = 4;
-	this.value = 27;
-	this.immune = [];
-	this.onDeath = [3];
-	this.speed = 3.2;
-	this.color = "yellow";
-}}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 4)}
+	static value = 27;
+	static immune = [];
+	static onDeath = [3];
+	static speed = 3.2;
+	static color = "yellow";
+}
 class Pink extends Dot {
-	constructor (path, distance) {
-		super(path,distance)
-		this.health = 5;
-		this.value = 40;
-		this.immune = [];
-		this.onDeath = [4];
-		this.speed = 3.5;
-		this.color = "pink";
-	}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 5)}
+	static value = 40;
+	static immune = [];
+	static onDeath = [4];
+	static speed = 3.5;
+	static color = "pink";
 }
 class Black extends Dot {
-	constructor (path, distance) {
-		super(path,distance)
-		this.health = 11;
-		this.value = 70;
-		this.immune = ["explosion"];
-		this.onDeath = [5, 5];
-		this.speed = 3.5;
-		this.color = "black";
-	}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 11)}
+	static value = 70;
+	static immune = ["explosion"];
+	static onDeath = [5,5];
+	static speed = 3.5;
+	static color = "black";
 }
 class White extends Dot {
-	constructor (path, distance) {
-		super(path,distance)
-		this.health = 11;
-		this.value = 70;
-		this.immune = ["freeze"];
-		this.onDeath = [5, 5];
-		this.speed = 3.5;
-		this.color = "white";
-	}
+	constructor (path, distance)
+	{super(path,distance, /*health*/ 11)}
+	static value = 70;
+	static immune = ["freeze"];
+	static onDeath = [5,5];
+	static speed = 3.5;
+	static color = "white";
 }
+
+//have towers own bullet property when classifying them
 
 const bulletTypes = {
 	fast: {
-		color: "white",
+		color: "orange",
 		bclass:	"normal",
 		range:	100,
 		speed:	50,

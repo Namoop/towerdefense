@@ -34,7 +34,8 @@ class Button {
 }
 
 class Dot {
-	constructor(pathindex, distance) {
+	constructor(pathindex, distance, health) {
+		this.health = health;
 		this.index = dots.length;
 		this.distance = distance ?? 1;
 		this.pathindex = pathindex;
@@ -43,16 +44,16 @@ class Dot {
 	pop(damage) {
 		this.health -= damage;
 		if(this.health <= 0) {
-			gold += this.value;
+			gold += this.constructor.value;
 			if (this.onDeath)
-				for (let n in this.onDeath)
-					newDot(this.onDeath[n], this.pathindex, this.distance-10*n);
+				for (let n in this.constructor.onDeath)
+					newDot(this.constructor.onDeath[n], this.pathindex, this.distance-10*n);
 			
 			this.delete();
 		}
 	}
 	draw() {
-		main.draw.color = this.color;
+		main.draw.color = this.constructor.color;
 		main.draw.ellipse(...mapDistToXy(this.distance, this.pathindex), 10, 10, true);
 	}
 	delete() {
@@ -107,7 +108,7 @@ class Tower {
 				new Bullet(this.x+THALF, this.y+THALF, this.angle, this, this.bullet);
 				if(i == 0) bullets.at(-1).target = d;
 				else {
-					if(dots.length > 0) bullets.at(-1).target = dots[Math.floor(Math.random() * dots.length)];
+					if(dots.length) bullets.at(-1).target = dots[Math.floor(Math.random() * dots.length)];
 				}
 			}
 			break;
@@ -144,8 +145,7 @@ class Tower {
 					break;
 				}
 			}
-			if(this.idle)
-				this.currdelay = 1;
+			if(this.idle) this.currdelay = 1;
 		}
 	}
 	upgrade(t) {
@@ -156,6 +156,9 @@ class Tower {
 		this.up[t] = 1;
 		gold -= u[0];
 		this.price += u[0];
+		
+		for(let i in u[1]) this[u[1][i][0]] = u[1][i][1];
+		/* //ENZO DONT USE SO MANY SWITCHES COMPLETELY UNNECESARILY
 		for(let i in u[1])
 			switch(u[1][i][0]) {
 			case "nshot":	this.nshot = u[1][i][1]; break;
@@ -163,7 +166,7 @@ class Tower {
 			case "radius":	this.radius = u[1][i][1]; break;
 			case "bullet":	this.bullet = u[1][i][1]; break;
 			case "delay":	this.delay = u[1][i][1]; break;
-			}
+			}*/
 	}
 	draw() {
 		let nw, nh;
@@ -176,8 +179,8 @@ class Tower {
 		main.draw.rect(this.x, this.y, TSIZE, TSIZE, true);
 		main.draw.color = "black";
 		switch(this.type) {
-		case "wizard":
-		case "gunner":
+		case "wizard": /*add different tower art at some point*/
+		case "gunner": /*maybe move to config?*/
 		case "speedy":
 		case "cannon":
 			nw = TSIZE*(4/5);
@@ -286,7 +289,7 @@ class Bullet {
 		for(let n of dots) {
 			if (this.pierced.includes(n)) continue;
 			let skip = false;
-			for (let i of (this.attributes?this.attributes:[])) if (n.immune.includes(i)) {skip = true; break;}
+			for (let i of (this.attributes?this.attributes:[])) if (n.constructor.immune.includes(i)) {skip = true; break;}
 			if (skip) continue;
 			let [dotx, doty] = mapDistToXy(n.distance, n.pathindex);
 			let distance = Math.sqrt((Math.pow(dotx-this.x,2))+(Math.pow(doty-this.y,2)));
