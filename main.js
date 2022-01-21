@@ -125,14 +125,18 @@ function mapSetup () {
 			if(t.index != ctw && main.mouseIn(t.x, t.y, t.x+TSIZE, t.y+TSIZE)) {
 				t.delete();
 				selected = -1;
-				gold += Math.floor(t.price / 1.5);
+				debugger;
+				let value = t.constructor.price;
+				for (let i = 0; i < t.up[0]; i++) value += t.constructor.upgrades[0][i].price
+				for (let i = 0; i < t.up[1]; i++) value += t.constructor.upgrades[1][i].price
+				gold += Math.floor(value / 1.5);
 				break;
 			}
 		}
 	}, 2])
 	//tower icons
 	let yo = 0, xo = 0;
-	for(let t in towerTypes) {
+	for(let t in activeTowers) {
 		if(17+yo*70 > 285) {
 			xo += ISIZE*1.5;
 			yo = 0;
@@ -140,11 +144,11 @@ function mapSetup () {
 		new Button ({
 			x: 620+xo, y: 25+yo*70,
 			width: ISIZE, height: ISIZE,
-			color: towerTypes[t].color,
-			text: "$"+towerTypes[t].price,
+			color: activeTowers[t].color,
+			text: "$"+activeTowers[t].price,
 			textColor: "#c2d211", textSize: 15,
 			callback: function (t) {
-				new Tower(t, main.mouse.x-IHALF, main.mouse.y-IHALF);
+				newTower(t, main.mouse.x-IHALF, main.mouse.y-IHALF);
 				ctw = towers.length-1;
 				selected = ctw;
 			}, param: [t],
@@ -216,11 +220,11 @@ function runGame () {
 					}
 				}*/
 				if(out || towers[ctw].x < 0 || towers[ctw].x > 550 || towers[ctw].y <= 10 || towers[ctw].y > 390
-					|| gold-towerTypes[towers[ctw].type].price < 0)
+					|| gold-towers[ctw].constructor.price < 0)
 					towers[ctw].delete();
 				else {
 					towers[ctw].idle = true;
-					gold -= towerTypes[towers[ctw].type].price;
+					gold -= towers[ctw].constructor.price;
 				}
 				ctw = selected = -1;
 			}
@@ -316,9 +320,10 @@ function drawGame () {
 	}
 	//draw tails
 	for(let i in tails) {
-		main.draw.alpha(tails[i][0].alpha);
-		main.draw.color = tails[i][0].color;
-		tails[i][3] -= tails[i][0].size / 10;
+		debugger;
+		main.draw.alpha(tails[i][0].alpha); //and i OOP
+		main.draw.color = tails[i][0].constructor.color;
+		tails[i][3] -= tails[i][0].k.size / 10;
 		main.draw.ellipse(tails[i][1], tails[i][2], tails[i][3], tails[i][3], true);
 		if(tails[i][3] < 0.1)
 			tails.splice(i,1);
@@ -326,20 +331,15 @@ function drawGame () {
 	}
 	//draw towers
 	if(selected >= 0) {
-		let v = 0, t = towers[selected];
+		let v = 0, t = towers[selected], k = t.constructor;
 
 		main.draw.alpha(0.5);
 		main.draw.color = "#63666a";
+		 main.draw.ellipse(t.x+THALF, t.y+THALF, t.radius, t.radius, true);
 		if (t.inner) {
-			main.pen.save()
-			main.draw.size = t.radius-t.inner
-			main.draw.ellipse(t.x+THALF, t.y+THALF, t.radius-t.inner,t.radius-t.inner)//-t.inner/2, t.radius-t.inner/2)
-			main.draw.size = 1;
-			main.draw.color = "black;"
-			main.draw.ellipse(t.x+THALF, t.y+THALF, t.radius,t.radius)
-			main.pen.restore()
+			main.draw.color = "black";
+			main.draw.ellipse(t.x+THALF, t.y+THALF, t.inner, t.inner, true);
 		}
-		else main.draw.ellipse(t.x+THALF, t.y+THALF, t.radius, t.radius, true);
 		main.draw.alpha(1);
 		main.draw.color = "#fff";
 		main.draw.text(80, 35, 20, "dmg:  "+t.popcount);
@@ -347,7 +347,26 @@ function drawGame () {
 			v += t.popsec[i];
 		main.draw.text(80, 55, 20, "dps:   "+v);
 		main.draw.text()
-		if(!t.up[0]) {
+		
+		if (t.up[0] >= k.upgrades[0].length) {
+			main.draw.color = "#66ff00";
+			main.draw.text(620, 330, 15, "Maxed Out");
+		} else {
+			main.draw.color = "#c2d211";
+			main.draw.text(620, 330, 20, "$"+k.upgrades[0][t.up[0]].price);
+			main.draw.color = "#fff";
+			main.draw.text(620, 365, 15, k.upgrades[0][t.up[0]].tagline);
+		}
+		if (t.up[1] >= k.upgrades[1].length) {
+			main.draw.color = "#66ff00";
+			main.draw.text(720, 330, 15, "Maxed Out");
+		} else {
+			main.draw.color = "#c2d211";
+			main.draw.text(720, 330, 20, "$"+k.upgrades[1][t.up[1]].price);
+			main.draw.color = "#fff";
+			main.draw.text(720, 365, 15, k.upgrades[1][t.up[1]].tagline);
+		}
+		/*if(!t.up[0]) {
 			main.draw.color = "#c2d211";
 			main.draw.text(620, 330, 20, upgrades[t.type][0][0]+"$");
 		} else {
@@ -364,16 +383,17 @@ function drawGame () {
 		main.draw.color = "#fff";
 		main.draw.text(620, 365, 15, upgrades[t.type][0][2]);
 		main.draw.text(720, 365, 15, upgrades[t.type][1][2]);
+	*/
 	}
 	for(let t of towers) {
 		t.currdelay--;
-		if(++t.ticks >= 20) {
+		/*if(++t.ticks >= 20) {
 			t.popsec.splice(t.popsec.length-1)
 			t.popsec.unshift(0);
 			t.ticks = 0;
-		}
-		if(t.currdelay == 0)
-			t.targeting();
+		}*/
+		if(t.currdelay == 0) t.targeting();
+		
 		t.draw();
 	}
 	//draw info

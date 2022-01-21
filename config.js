@@ -1,10 +1,11 @@
 const ISIZE	= 44;
-const IHALF	= 22;
-const TSIZE	= 40;
-const THALF	= 20;
 const PSIZE	= 50;
-const PHALF	= 25;
+const TSIZE	= 40;
+const IHALF	= ISIZE/2;
+const THALF	= TSIZE/2;
+const PHALF	= PSIZE/2;
 
+/*
 const upgrades = {
 	// bullet local copy editing
 	gunner:	[	
@@ -27,8 +28,243 @@ const upgrades = {
 			[2000, [["nshot", 2]], "+1 Bullet"],
 			[4000, [["delay", 4]], "+ Firerate"],
 		],
-};
+};*/
 
+class Gunner extends Tower {
+	constructor (x, y) {
+		super(x,y)
+		this.delay = 50;
+		this.radius = 120;
+		this.bullet = {
+			burst: 3,
+			color: "white",
+			range:	200,
+			speed:	25,
+			power:	1,
+			piercing: 1,
+			size:	2,
+			spread:	0.2,
+			attributes: [],
+		};
+	}
+	static color = "blue";
+	//static src = "images/towers/gunner_00.png";
+	//static nshot = 1;
+	static price = 300;
+	static upgrades = [ //also have option for art to change, and exclusive paths (you can only pick one)
+		[ { //LEFT PATH
+			tagline: "+3 Burst",
+			properties: ["burst",],
+			newValues: [5,],
+			price: 100,
+		}, {
+			tagline: "+5 Burst",
+			properties: ["burst",],
+			newValues: [10,],
+			price: 300,
+		}, ],
+		[ { //RIGHT PATH
+			tagline: "+3 Shots",
+			properties: ["nshot",],
+			newValues: [5,],
+			price: 300,
+		}, {
+			tagline: "+5 Shots",
+			properties: ["nshot",],
+			newValues: [10,],
+			price: 550,
+		}, ]
+	]
+}
+
+class Cannoneer extends Tower {
+	constructor (x, y) {
+		super(x,y)
+		this.delay = 200;
+		this.radius = 165;
+		this.inner = 75;
+		this.bullet = {
+			burst: 1,
+			color: "black",
+			range:	250,
+			speed:	40,
+			power:	10,
+			size:	7,
+			spread:	0,
+			attributes: ["impact"],
+		};
+	}
+	static color = "red";
+	//static src = "images/towers/cannon_00.png";
+	//static nshot = 1;
+	static price = 750;
+	static upgrades = [ //also have option for art to change, and exclusive paths (you can only pick one)
+		[ { //LEFT PATH
+			tagline: "More Damage",
+			properties: ["burst",],
+			newValues: [5,],
+			price: 100,
+		}, {
+			tagline: "+5 Burst",
+			properties: ["burst",],
+			newValues: [10,],
+			price: 300,
+		}, ],
+		[ { //RIGHT PATH
+			tagline: "Firerate +++",
+			properties: ["nshot",],
+			newValues: [5,],
+			price: 300,
+		}, {
+			tagline: "+5 Shots",
+			properties: ["nshot",],
+			newValues: [10,],
+			price: 550,
+		}, ]
+	]
+}
+
+class Wizard extends Tower {
+	constructor (x, y) {
+		super(x,y)
+		this.delay = 40;
+		this.radius = 170;
+		this.bullet = {
+			burst: 1,
+			color: "aqua",
+			range:	250,
+			speed:	15,
+			power:	2,
+			size:	3,
+			spread:	0,
+			attributes: ["impact", "plasma", "target"],
+		};
+	}
+	static color = "aqua";
+	//static src = "images/towers/wizard_00.png";
+	//static nshot = 1;
+	static price = 800;
+	static upgrades = [ //also have option for art to change, and exclusive paths (you can only pick one)
+		[ { //LEFT PATH
+			tagline: "More Damage",
+			properties: ["burst",],
+			newValues: [5,],
+			price: 100,
+		}, {
+			tagline: "+5 Burst",
+			properties: ["burst",],
+			newValues: [10,],
+			price: 300,
+		}, ],
+		[ { //RIGHT PATH
+			tagline: "Firerate +++",
+			properties: ["nshot",],
+			newValues: [5,],
+			price: 300,
+		}, {
+			tagline: "+5 Shots",
+			properties: ["nshot",],
+			newValues: [10,],
+			price: 550,
+		}, ]
+	]
+}
+
+class Speedy extends Tower {
+	constructor (x, y) {
+		super(x,y)
+		this.delay = 7;
+		this.radius = 75;
+		this.bullet = {
+			burst: 1,
+			color: "orange",
+			range:	100,
+			speed:	50,
+			power:	1,
+			piercing: 1,
+			size:	1,
+			spread:	0.75,
+			attributes: [],
+		};
+	}
+	static color = "pink";
+	//static src = "images/towers/speedy_00.png";
+	//static nshot = 1;
+	static price = 3000;
+	static upgrades = [ //also have option for art to change, and exclusive paths (you can only pick one)
+		[ { //LEFT PATH
+			tagline: "+3 Burst",
+			properties: ["burst",],
+			newValues: [5,],
+			price: 100,
+		}, {
+			tagline: "+5 Burst",
+			properties: ["burst",],
+			newValues: [10,],
+			price: 300,
+		}, ],
+		[ { //RIGHT PATH
+			tagline: "+3 Shots",
+			properties: ["nshot",],
+			newValues: [5,],
+			price: 300,
+		}, {
+			tagline: "+5 Shots",
+			properties: ["nshot",],
+			newValues: [10,],
+			price: 550,
+		}, ]
+	]
+}
+
+class Gunner extends Tower {
+	constructor (x, y) {
+		super(x,y)
+		this.delay = 350;
+		this.radius = 150;
+		this.bullet = {
+			burst: 1,
+			color: "white",
+			range:	200,
+			speed:	2,
+			power:	5,
+			piercing: 1,
+			size:	10,
+			spread:	1,
+			attributes: [],
+		};
+	}
+	static color = "yellow";
+	//static src = "images/towers/gunner_00.png";
+	//static nshot = 1;
+	static price = 1000;
+	static upgrades = [ //also have option for art to change, and exclusive paths (you can only pick one)
+		[ { //LEFT PATH
+			tagline: "+3 Burst",
+			properties: ["burst",],
+			newValues: [5,],
+			price: 100,
+		}, {
+			tagline: "+5 Burst",
+			properties: ["burst",],
+			newValues: [10,],
+			price: 300,
+		}, ],
+		[ { //RIGHT PATH
+			tagline: "+3 Shots",
+			properties: ["nshot",],
+			newValues: [5,],
+			price: 300,
+		}, {
+			tagline: "+5 Shots",
+			properties: ["nshot",],
+			newValues: [10,],
+			price: 550,
+		}, ]
+	]
+}
+
+/*
 const towerTypes = {
 	gunner: {
 		color:	"blue",
@@ -86,7 +322,7 @@ const towerTypes = {
 		price:	1000,
 		constant: true,
 	},
-};
+};*/
 
 
 class Red extends Dot {
@@ -154,7 +390,7 @@ class White extends Dot {
 }
 
 //have towers own bullet property when classifying them
-
+/*
 const bulletTypes = {
 	fast: {
 		color: "orange",
@@ -237,9 +473,12 @@ const bulletTypes = {
 		cooldown: 120,
 		attributes: [],
 	},
-};
+};*/
 
 const newDot = (type, path, distance) => new [,Red, Blue, Green, Yellow, Pink, Black, White][type](path, distance)
+let activeTowers = {"gunner":Gunner,"cannon":Cannoneer,"wizard":Wizard,"speedy":Speedy,}
+const newTower = (type, x, y) => new activeTowers[type](x, y)
+
 
 const maps = {
 	dotlane: {
